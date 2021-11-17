@@ -19,7 +19,8 @@ def scrape_all():
         "news_paragraph": news_paragraph,
         "featured_image": featured_image(browser),
         "facts": mars_facts(),
-        "last_modified": dt.datetime.now()
+        "last_modified": dt.datetime.now(),
+        "hemisphere_images": hemisphere(browser)
     }
 
     # Stop webdriver and return data
@@ -96,6 +97,58 @@ def mars_facts():
 
     # Convert dataframe into HTML format, add bootstrap
     return df.to_html(classes="table table-striped")
+
+
+def hemisphere(browser):
+    # Use browser to visit the URL 
+    url = 'https://marshemispheres.com/'
+    browser.visit(url)
+
+    #2. Create a list to hold the images and titles.
+    hemisphere_image_urls = []
+    main_url = 'https://marshemispheres.com/'
+
+    # Parse the data
+    html = browser.html
+    hemi_url_soup = soup(html, 'html.parser')
+
+    # 3. Write code to retrieve the image urls and titles for each hemisphere.
+    divs = hemi_url_soup.find("div", class_='downloads')
+    link_div = hemi_url_soup.find_all("div", class_="description")
+
+    anchors = browser.links.find_by_partial_text('Hemisphere')
+    relative_urls = set([anchor['href'] for anchor in anchors])
+
+    hemispheres = {}
+
+    for relative_url in relative_urls:
+        
+        full_url = f'{relative_url}'
+        browser.visit(full_url)
+        
+        html = browser.html
+        urls_soup = soup(html, 'html.parser')
+        
+        hemi_title = browser.find_by_tag('h2').text
+        
+        downloads_div = urls_soup.find('div', class_='downloads')
+        img_anchor = downloads_div.find('a', text=('Sample'))
+        img_url = img_anchor['href']
+        full_img_url = f'{main_url}{img_url}'
+        
+        hemispheres = {
+            'img_url': full_img_url,
+            'title': hemi_title,
+        }
+        
+        browser.back()
+            
+        hemisphere_image_urls.append(hemispheres)
+  
+    # Return the dictionary 
+    return  hemisphere_image_urls    
+
+
 
 if __name__ == "__main__":
 
